@@ -70,12 +70,12 @@ hold on
 quiver(R(2:2*length_a-2),Z(1:length_h),Er(1:length_h,2:2*length_a-2),Ez(1:length_h,2:2*length_a-2),'Color','k','LineWidth',1.2);
 
 
-r_inf = 10;
-z_inf = 30;
+r_inf = 5;
+z_inf = 15;
 h_gap = 0.02;
 metal_a = a_m/step_a+1;
 metal_h = h_m/step_h+1;
-gap_h = (h_m-h_gap)/step+1;
+gap_h = (h_m-h_gap)/step_h+1;
 length_a = r_inf/step_a+1;
 length_h = z_inf/step_h+1;
 
@@ -128,20 +128,20 @@ while maxerror_V > tolerance_V
     disp(maxerror_V);
 end
 
-draw_a = a_m*5;
-draw_h = h_m*5;
+draw_a = metal_a*2;
+draw_h = metal_h*2;
 
 phi_final = zeros(2*draw_a-1,draw_h);
 for i = 1:2*draw_a-1
-    phi_final(i,:) = phi(abs(i-length_a)+1,:,this_time);
+    phi_final(i,:) = phi(abs(i-draw_a)+1,1:draw_h,this_time);
 end
 
-R = -a_m:step_a:a_m;
-Z = 0:step_h:h_m;
+R = -(draw_a-1)*step_a:step_a:(draw_a-1)*step_a;
+Z = 0:step_h:(draw_h-1)*step_h;
 figure
 set(gcf,'Position',[300 100 600 900]);
 contourf(R,Z,phi_final(:,:)',200,'Linestyle','none');
-title('金属圆筒内部电场分布','FontSize',15);
+title('金属圆筒内外电场分布','FontSize',15);
 xlabel('\it r /\rm m');
 ylabel('\it z /\rm m');
 
@@ -149,6 +149,9 @@ hold on
 
 [Er,Ez] = gradient(-phi_final(:,:)',step_a,step_h);
 
-quiver(R(2:2*length_a-2),Z(1:length_h),Er(1:length_h,2:2*length_a-2),Ez(1:length_h,2:2*length_a-2),'Color','k','LineWidth',1.2);
+quiver(R(2:2*draw_a-2),Z(1:draw_h),Er(1:draw_h,2:2*draw_a-2),Ez(1:draw_h,2:2*draw_a-2),'LineWidth',1);
+plot([a_m a_m],[0 h_m-h_gap],'k-','LineWidth',2);
+plot([-a_m -a_m],[0 h_m-h_gap],'k-','LineWidth',2);
+plot([-a_m a_m],[h_m h_m],'k-','LineWidth',2);
 
 
