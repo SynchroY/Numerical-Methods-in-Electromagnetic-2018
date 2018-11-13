@@ -100,22 +100,23 @@ hold on
 [Er,Ez] = gradient(-phi_final(:,:)',step_a,step_h);
 quiver(R(2:2*length_a-2),Z(1:length_h),Er(1:length_h,2:2*length_a-2),Ez(1:length_h,2:2*length_a-2),'Color','k','LineWidth',1.2);
 
+
 %计算开放场域电场分布
 %设定认为的无穷远位置
-r_inf = 5;
-z_inf = 15;
+r_inf = 1;
+z_inf = 3;
 %设定缝隙尺寸
 a_gap = 0.01;
 %设定划分场域步长
 step_a = a_gap/5;
 step_h = a_gap/5;
 %设定金属圆筒边界对应的坐标
-metal_a = a_m/step_a+1;
-metal_h = h_m/step_h+1;
+metal_a = round(a_m/step_a)+1;
+metal_h = round(h_m/step_h)+1;
 gap_a = round((a_m-a_gap)/step_a+1);
 %设定需要的数组长度
-length_a = r_inf/step_a+1;
-length_h = z_inf/step_h+1;
+length_a = round(r_inf/step_a)+1;
+length_h = round(z_inf/step_h)+1;
 
 %初始化电势值
 phi = zeros(length_a, length_h, 2);
@@ -125,7 +126,7 @@ end
 
 times = 0;
 maxerror_V = 1000;
-tolerance_V = 0.0001;
+tolerance_V = 0.001;
 this_time = 1;
 
 while maxerror_V > tolerance_V
@@ -170,6 +171,7 @@ while maxerror_V > tolerance_V
         end
     end
     clc;
+    disp(a_gap);
     disp(maxerror_V);
 end
 
@@ -177,7 +179,7 @@ end
 draw_a = metal_a*2;
 draw_h = round(metal_h*1.6667);
 
-%去除电势结果
+%取出电势结果
 phi_final = zeros(2*draw_a-1,draw_h);
 for i = 1:2*draw_a-1
     phi_final(i,:) = phi(abs(i-draw_a)+1,1:draw_h,this_time);
@@ -234,6 +236,8 @@ end
 C = Q/(phih_V-phi0_V);
 disp(['电容大小为',num2str(C*1E12),'pF']);
 
+
+
 %绘制电荷分布
 figure
 set(gcf,'Position',[300 100 800 800]);
@@ -254,4 +258,118 @@ contourf(X,Y,Z,200,'LineStyle','None');
 axis([-a_m*1.1 a_m*1.1 -a_m*1.1 a_m*1.1]);
 title('金属圆筒顶盖电荷分布','FontSize',15);
 
+% %计算开放场域电场分布
+% %设定认为的无穷远位置
+% r_inf = 5;
+% z_inf = 15;
+% %设定缝隙尺寸
+% h_gap = 0.01;
+% %设定划分场域步长
+% step_a = h_gap/2;
+% step_h = h_gap/2;
+% %设定金属圆筒边界对应的坐标
+% metal_a = a_m/step_a+1;
+% metal_h = h_m/step_h+1;
+% gap_h = round((h_m-h_gap)/step_h+1);
+% %设定需要的数组长度
+% length_a = r_inf/step_a+1;
+% length_h = z_inf/step_h+1;
+% 
+% %初始化电势值
+% phi = zeros(length_a, length_h, 2);
+% for i=1:metal_a
+%     phi(i,metal_h,1) = phih_V;
+% end
+% 
+% times = 0;
+% maxerror_V = 1000;
+% tolerance_V = 0.0001;
+% this_time = 1;
+% 
+% while maxerror_V > tolerance_V
+%     times = times + 1;
+%     last_time = this_time;
+%     this_time = mod(times,2)+1;
+%     maxerror_V = 0;
+%     %设定无穷高处和地面边界条件
+%     for i = 1:length_a
+%         phi(i,1,this_time) = phi0_V;
+%         phi(i,length_h,this_time) = phi0_V;
+%     end
+%     %设定顶盖边界条件
+%     for i = 1:metal_a
+%         phi(i,metal_h,this_time) = phih_V;
+%     end
+%     %设定中心轴线和侧面无穷远处边界条件
+%     for k = 2:length_h-1
+%         %剔除顶盖上的节点
+%         if k~=metal_h
+%             phi(1,k,this_time) = (2*phi(2,k,last_time)/step_a^2+(phi(1,k+1,last_time)+phi(1,k-1,this_time))/step_h^2)/(2/step_a^2+2/step_h^2);
+%             if (phi(1,k,this_time)-phi(1,k,last_time)) > maxerror_V
+%                 maxerror_V = phi(1,k,this_time)-phi(1,k,last_time);
+%             end
+%         end
+%         phi(length_a,k,this_time) = phi0_V;
+%     end
+%     %设定圆筒侧壁边界条件
+%     for k = 2:gap_h
+%         phi(metal_a,k,this_time) = phi0_V;
+%     end
+%     %进行一轮迭代计算
+%     for i = 2:length_a-1
+%         for k = 2:length_h-1
+%             %剔除金属部分节点
+%             if ((k~=metal_h)&&(i~=metal_a))||((i==metal_a)&&(k>gap_h)&&(k<metal_h))
+%                 phi(i,k,this_time) = ((phi(i+1,k,last_time)+phi(i-1,k,this_time))/step_a^2+(phi(i+1,k,last_time)-phi(i-1,k,this_time))/(2*(i-1)*step_a^2)+(phi(i,k+1,last_time)+phi(i,k-1,this_time))/step_h^2)/(2/step_a^2+2/step_h^2);
+%                 if (phi(i,k,this_time)-phi(i,k,last_time)) > maxerror_V
+%                     maxerror_V = phi(1,k,this_time)-phi(1,k,last_time);
+%                 end
+%             end
+%         end
+%     end
+%     clc;
+%     disp(maxerror_V);
+% end
+% 
+% %设定绘制场域大小
+% draw_a = metal_a*2;
+% draw_h = round(metal_h*1.6667);
+% 
+% %取出电势结果
+% phi_final = zeros(2*draw_a-1,draw_h);
+% for i = 1:2*draw_a-1
+%     phi_final(i,:) = phi(abs(i-draw_a)+1,1:draw_h,this_time);
+% end
+% 
+% R = -(draw_a-1)*step_a:step_a:(draw_a-1)*step_a;
+% Z = 0:step_h:(draw_h-1)*step_h;
+% %绘制等势线
+% figure
+% set(gcf,'Position',[300 100 600 900]);
+% contour(R,Z,phi_final(:,:)',20);
+% title('金属圆筒内外电场分布','FontSize',15);
+% xlabel('\it r /\rm m');
+% ylabel('\it z /\rm m');
+% hold on
+% %绘制电场强度
+% [Er,Ez] = gradient(-phi_final(:,:)',step_a,step_h);
+% quiver(R(2:2*draw_a-2),Z(1:draw_h),Er(1:draw_h,2:2*draw_a-2),Ez(1:draw_h,2:2*draw_a-2),'Color','k');
+% %画出金属圆筒
+% plot([a_m a_m],[0 h_m-h_gap],'k-','LineWidth',3);
+% plot([-a_m -a_m],[0 h_m-h_gap],'k-','LineWidth',3);
+% plot([-a_m a_m],[h_m h_m],'k-','LineWidth',3);
+% 
+% %绘制另一种风格等势线
+% figure
+% set(gcf,'Position',[300 100 600 900]);
+% contourf(R,Z,phi_final(:,:)',200,'LineStyle','None');
+% title('金属圆筒内外电场分布','FontSize',15);
+% xlabel('\it r /\rm m');
+% ylabel('\it z /\rm m');
+% hold on
+% [Er,Ez] = gradient(-phi_final(:,:)',step_a,step_h);
+% quiver(R(2:2*draw_a-2),Z(1:draw_h),Er(1:draw_h,2:2*draw_a-2),Ez(1:draw_h,2:2*draw_a-2),'Color','k');
+% plot([a_m a_m],[0 h_m-h_gap],'k-','LineWidth',3);
+% plot([-a_m -a_m],[0 h_m-h_gap],'k-','LineWidth',3);
+% plot([-a_m a_m],[h_m h_m],'k-','LineWidth',3);
 
